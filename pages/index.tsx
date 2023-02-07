@@ -1,33 +1,7 @@
 import Head from "next/head";
-import { useState } from "react";
-import { Slate, withReact } from "slate-react";
 import { Builder, VisualComponents, Designer } from "@/components";
-import { BaseEditor, createEditor, Editor } from "slate";
-import { DndProvider } from "react-dnd";
-import { HTML5Backend } from "react-dnd-html5-backend";
-
-const withBuilderVoid = (editor: BaseEditor) => {
-  const { isVoid } = editor;
-  editor.isVoid = () => {
-    return true;
-  };
-  return editor;
-};
-
-const initialValue = [
-  {
-    type: "add-block",
-    children: [{ text: "" }],
-  },
-  {
-    type: "add-block",
-    children: [{ text: "" }],
-  },
-];
 
 export default function Home() {
-  const [editor] = useState(() => withReact(withBuilderVoid(createEditor())));
-
   return (
     <>
       <Head>
@@ -40,15 +14,11 @@ export default function Home() {
       <main>
         <nav>Navigation</nav>
 
-        <DndProvider backend={HTML5Backend}>
-          <div id="app">
-            <VisualComponents />
-            <Slate editor={editor} value={initialValue}>
-              <Builder />
-              <Designer />
-            </Slate>
-          </div>
-        </DndProvider>
+        <div id="app">
+          <VisualComponents />
+          <Builder />
+          <Designer />
+        </div>
       </main>
     </>
   );

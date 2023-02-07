@@ -1,24 +1,11 @@
-import { useDrag } from "react-dnd";
-
 function Text() {
-  const [{ isDragging }, drag] = useDrag(() => ({
-    type: 'component',
-    item: {
-      type: 'text'
-    },
-    collect: (monitor) => ({
-      isDragging: !!monitor.isDragging()
-    })
-  }), []);
-
   return (
     <div 
-    ref={drag}
+    draggable={true}
     style={{ 
         width: "100px", 
         height: "100px", 
-        border: "1px solid black",
-        opacity: isDragging ? 0.5 : 1
+        border: "1px solid black"
     }}>
       Text
     </div>
