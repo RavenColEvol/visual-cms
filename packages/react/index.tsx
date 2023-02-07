@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { createBuilder, Element } from "../core";
 import { Node } from "../core/types";
 import { BuilderProvider, useBuilder } from "./use-builder";
-import { findPath } from "./utils";
+import { findKey, findPath } from "./utils";
 import { NODE_TO_INDEX, NODE_TO_PARENT } from "./weak-maps";
 
 // Package internal code
@@ -33,14 +33,15 @@ function Renderer(props: any) {
 }
 
 function useChildren({ node, components }: any) {
-  const path = findPath(node);
   const children = [] as any;
-  console.log('props', path, children);
   
   node['children'].forEach((child: Node, idx: number) => {
+    const key = findKey(child);
+
     if(Element.isElement(child)) {
       children.push(
-        <ElementComponent 
+        <ElementComponent
+          key={key.id}
           element={child}
           components={components}
         />
@@ -48,6 +49,7 @@ function useChildren({ node, components }: any) {
     } else {
       children.push(
         <LeafComponent 
+          key={key.id}
           text={child}
         />
       )

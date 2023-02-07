@@ -1,5 +1,5 @@
 import { Node, Path } from "../core/types";
-import { NODE_TO_INDEX, NODE_TO_PARENT } from "./weak-maps";
+import { NODE_TO_INDEX, NODE_TO_KEY, NODE_TO_PARENT } from "./weak-maps";
 
 export const findPath = (node: Node): Path => {
   const path: Path = [];
@@ -24,4 +24,24 @@ export const findPath = (node: Node): Path => {
   }
   
   throw new Error('Unable to find path');
+}
+
+let n = 0;
+class Key {
+  id: string;
+  
+  constructor() {
+    this.id = `${n++}`
+  }
+}
+
+export const findKey = (node: Node) => {
+  let key = NODE_TO_KEY.get(node);
+
+  if(!key) {
+    key = new Key();
+    NODE_TO_KEY.set(node, key);
+  }
+
+  return key
 }
