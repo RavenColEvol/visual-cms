@@ -1,4 +1,6 @@
-import { LegacyRef, MutableRefObject, useEffect, useRef, useState } from "react";
+import { LegacyRef, useEffect, useRef, useState } from "react";
+import { useBuilderFrame } from "../context/frameContext";
+import { getEvent, getRelativeCoordinates, sendFrameMessage } from "../utils";
 
 type dragCallback = {
   item: object,
@@ -11,6 +13,8 @@ type dragResult = [
 
 function useDrag(props:dragCallback): dragResult {
   const dragRef = useRef(null);
+  const frameRef = useBuilderFrame()!;
+
   const [state, setState] = useState({
     ...props,
     isDragging: false
@@ -20,9 +24,8 @@ function useDrag(props:dragCallback): dragResult {
     if(!dragRef.current) return;
     const dom = dragRef.current as HTMLElement;
     const builderDropzone = document.getElementById('weeb-dropzone') as HTMLDivElement;
-    console.log('builder', builderDropzone);
     // drag
-    const handleDrag = (event: DragEvent) => {
+    const handleDragStart = (event: DragEvent) => {
       builderDropzone.style.display = 'block';
       setState(state => ({
         ...state, 
@@ -30,18 +33,18 @@ function useDrag(props:dragCallback): dragResult {
       }))
     }
     const handleDragEnd = (event: DragEvent) => {
-      console.log('handle drag end', event);
       builderDropzone.style.display = 'none';
       setState(state => ({
         ...state, 
         isDragging: false
       }))
     }
-    dom.addEventListener('dragstart', handleDrag);
+
+    dom.addEventListener('dragstart', handleDragStart);
     dom.addEventListener('dragend', handleDragEnd);
 
     return () => {
-      dom.removeEventListener('dragstart', handleDrag);
+      dom.removeEventListener('dragstart', handleDragStart);
       dom.removeEventListener('dragend', handleDragEnd);
     }
   }, [dragRef])

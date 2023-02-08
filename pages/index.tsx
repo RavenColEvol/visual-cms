@@ -1,7 +1,12 @@
+import React, { useRef } from "react";
 import Head from "next/head";
 import { Builder, VisualComponents, Designer } from "@/components";
+import { FrameProvider } from "../components/context/frameContext";
+
 
 export default function Home() {
+  const builderRef = useRef<HTMLIFrameElement>(null);
+
   return (
     <>
       <Head>
@@ -14,11 +19,13 @@ export default function Home() {
       <main>
         <nav>Navigation</nav>
 
-        <div id="app">
-          <VisualComponents />
-          <Builder />
-          <Designer />
-        </div>
+        <FrameProvider value={builderRef}>
+          <div id="app">
+            <VisualComponents />
+            <Builder builderRef={builderRef} />
+            <Designer />
+          </div>
+        </FrameProvider>
       </main>
     </>
   );

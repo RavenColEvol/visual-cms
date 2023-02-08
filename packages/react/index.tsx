@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from "react";
 import { createBuilder, Element } from "../core";
 import { Node } from "../core/types";
+import { usePostMessage } from "./hooks";
 import { BuilderProvider, useBuilder } from "./use-builder";
 import { findKey, findPath } from "./utils";
 import { NODE_TO_INDEX, NODE_TO_PARENT } from "./weak-maps";
@@ -13,9 +14,15 @@ export function BuilderComponent({ value }: any) {
     return builder;
   });
 
+  usePostMessage();
+
   const components = useMemo(
     () => ({
-      text: (props: any) => <p {...props.attributes}>{props.children}</p>,
+      text: (props: any) => <p 
+      onDragOver={(event) => {
+        console.log('here', event);
+      }}
+      {...props.attributes}>{props.children}</p>,
     }),
     []
   );
