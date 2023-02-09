@@ -52,21 +52,47 @@ export function BuilderComponent({ value }: any) {
 }
 
 function Renderer(props: any) {
+  const dragLineRef = useRef(null);
+
   useIsomorphicLayoutEffect(() => {
     const onDOMSelectionChange = throttle(() => {
       const domSelection = document.getSelection()!;
-
-      console.log("dom selection", domSelection);
     }, 100);
 
+    const onDragOver = (event: DragEvent) => {
+      const { clientX, clientY } = event;
+      const cursorEl = document.elementFromPoint(clientX, clientY);
+      const node = cursorEl?.closest('[data-cs-weeb-node="element"]')
+      const dragLine = dragLineRef.current! as HTMLSpanElement;
+      if(!node || !dragLine) return;
+      const box = node.getBoundingClientRect();
+      const { bottom, top, width, left } = box;
+
+      const topDistance = Math.abs(clientY - top);
+      const bottomDistance = Math.abs(clientY - bottom);
+      const closestTo = topDistance > bottomDistance ? 'bottom': 'top';
+      dragLine.style.top = box[closestTo] + 'px'
+      dragLine.style.left = left + 'px'
+      dragLine.style.width = width + 'px'
+    }
+
     document.addEventListener("selectionchange", onDOMSelectionChange);
+    document.addEventListener('dragover', onDragOver);
+
     return () => {
       document.removeEventListener("selectionchange", onDOMSelectionChange);
+      document.removeEventListener('dragover', onDragOver);
     };
   }, []);
+  
   const editor = useBuilder();
-  console.log('editor changed', editor)
-  return <div data-cs-weeb-editor>{useChildren(props)}</div>;
+
+  return (
+    <>
+      <div data-cs-weeb-editor>{useChildren(props)}</div>
+      <span style={{ background: 'red', height: '2px', display: 'inline-block', position: 'fixed'}} ref={dragLineRef}></span>
+    </>
+  );
 }
 
 function useChildren({ node, components }: any) {
