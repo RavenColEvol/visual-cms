@@ -7,6 +7,7 @@ import { usePostMessage } from "./hooks";
 import { BuilderProvider, StaticBuilderProvider, useBuilder } from "./use-builder";
 import { findKey, useIsomorphicLayoutEffect } from "./utils";
 import { EDITOR_TO_ON_CHANGE, NODE_TO_INDEX, NODE_TO_PARENT } from "./weak-maps";
+import styles from './index.module.css';
 
 // Package internal code
 export function BuilderComponent({ value }: any) {
@@ -53,10 +54,24 @@ export function BuilderComponent({ value }: any) {
 
 function Renderer(props: any) {
   const dragLineRef = useRef(null);
+  const outlineRef = useRef(null);
 
   useIsomorphicLayoutEffect(() => {
     const onDOMSelectionChange = throttle(() => {
       const domSelection = document.getSelection()!;
+      if(!domSelection || !outlineRef.current) return;
+      const isDifferentEl = domSelection.anchorNode !== domSelection.focusNode;
+      if(isDifferentEl) return;
+      const parentNode = domSelection.anchorNode?.parentNode as globalThis.Element;
+      if(!parentNode) return;
+      const outlineNode = parentNode.closest('[data-cs-weeb-node="element"]')
+      if(!outlineNode) return;
+      const box = outlineNode?.getBoundingClientRect() as any;
+      const outlineBox = outlineRef.current as HTMLSpanElement;
+      outlineBox.style.top = box['top'] + 'px';
+      outlineBox.style.left = box['left'] + 'px';
+      outlineBox.style.width = box['width'] + 'px';
+      outlineBox.style.height = box['height'] + 'px';
     }, 100);
 
     const onDragOver = (event: DragEvent) => {
@@ -90,7 +105,8 @@ function Renderer(props: any) {
   return (
     <>
       <div data-cs-weeb-editor>{useChildren(props)}</div>
-      <span style={{ background: 'red', height: '2px', display: 'inline-block', position: 'fixed'}} ref={dragLineRef}></span>
+      <span className="cs-weeb-dragline" style={{ background: 'red', height: '2px', display: 'inline-block', position: 'fixed'}} ref={dragLineRef}></span>
+      <span className={styles["cs-weeb-outline"]} ref={outlineRef}></span>
     </>
   );
 }

@@ -1,0 +1,7 @@
+.cs-weeb-outline {
+  display: inline-block;
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  outline: 2px solid red;
+}
