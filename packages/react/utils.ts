@@ -1,3 +1,4 @@
+import { useEffect, useLayoutEffect } from "react";
 import { Node, Path } from "../core/types";
 import { NODE_TO_INDEX, NODE_TO_KEY, NODE_TO_PARENT } from "./weak-maps";
 
@@ -45,3 +46,13 @@ export const findKey = (node: Node) => {
 
   return key
 }
+
+const CAN_USE_DOM = !!(
+  typeof window !== 'undefined' &&
+  typeof window.document !== 'undefined' &&
+  typeof window.document.createElement !== 'undefined'
+)
+
+export const useIsomorphicLayoutEffect = CAN_USE_DOM
+  ? useLayoutEffect
+  : useEffect

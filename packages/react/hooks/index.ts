@@ -31,14 +31,6 @@ export const usePostMessage = () => {
     }
     window.addEventListener('message', handlePostMessage);
 
-    // const drag = new DragEvent('dragover', { clientX: 55, clientY: 7})
-    setTimeout(() => {
-      const drag = new MouseEvent('mouseover', { clientX: 55, clientY: 7, bubbles: true})
-      const el = document.elementFromPoint(55, 7)!;
-      console.log('drag', drag, el);
-      el.dispatchEvent(drag);
-    }, 100)
-
     return () => {
       window.removeEventListener('message', handlePostMessage);
     }

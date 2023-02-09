@@ -1,9 +1,27 @@
+import { createDraft, finishDraft } from 'immer';
 import { Builder, Element as ElementType, Node as NodeType, Path as PathType, Text as TextType } from "./types";
+import { FLUSING } from './weak-maps';
 
-export const createBuilder = () => {
-  const builder = {
+export const createBuilder = ():Builder => {
+  const builder: Builder = {
     children: [],
     selection: null,
+    operations: [],
+    onChange: () => {},
+    apply: (op) => {
+      Transforms.transform(builder, op);
+      builder.operations.push(op);
+
+      if(!FLUSING.get(builder)) {
+        FLUSING.set(builder, true)
+
+        Promise.resolve().then(() => {
+          FLUSING.set(builder, false);
+          builder.onChange()
+          builder.operations = []
+        })
+      }
+    }
   };
 
   return builder;
@@ -34,7 +52,7 @@ export const Node = {
 
     return node;
   },
-  get(builder: Builder, path: PathType): ElementType {
+  get(builder: ElementType, path: PathType): ElementType {
     let node = builder;
 
     for (const idx of path) {
@@ -65,12 +83,7 @@ export const Transforms = {
     newParent.children.splice(newIndex, 0, node);
   },
   insertNode(builder: Builder, node: NodeType, at: PathType) {
-    if(at.length === 0) {
-      throw new Error("Unable to insert at root");
-    }
-    const parent = Node.parent(builder, at);
-    const index = at.at(-1)!;
-    parent.children.splice(index, 0, node);
+    builder.apply({ type: 'insert_node', path: at, node})
   },
   removeNode(builder: Builder, at: PathType) {
     if(at.length === 0) {
@@ -95,4 +108,29 @@ export const Transforms = {
       }
     }
   },
+  transform(builder: Builder, op: object):void {
+    builder.children = createDraft(builder.children)
+    let selection = builder.selection && createDraft(
+      builder.selection
+    );
+    try {
+      applyToDraft(builder, selection, op);
+    } finally {
+      builder.children = finishDraft(builder.children);
+    }
+  }
 };
+
+function applyToDraft(builder: Builder, selection: any, op:any) {
+  switch (op.type) {
+    case 'insert_node': {
+      const { path, node } = op
+      if(path.length === 0) {
+        throw new Error("Unable to insert at root");
+      }
+      const parent = Node.parent(builder, path);
+      const index = path.at(-1)!;
+      parent.children.splice(index, 0, node);
+    }
+  }
+}

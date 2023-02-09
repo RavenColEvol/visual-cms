@@ -1,6 +1,5 @@
 import { LegacyRef, useEffect, useRef, useState } from "react";
 import { useBuilderFrame } from "../context/frameContext";
-import { getEvent, getRelativeCoordinates, sendFrameMessage } from "../utils";
 
 type dragCallback = {
   item: object,
@@ -13,8 +12,7 @@ type dragResult = [
 
 function useDrag(props:dragCallback): dragResult {
   const dragRef = useRef(null);
-  const frameRef = useBuilderFrame()!;
-
+  
   const [state, setState] = useState({
     ...props,
     isDragging: false

@@ -13,5 +13,9 @@ export type Text = {
 export type Node = Element | Text
 
 export type Builder = {
-  children: Node[] 
+  children: Node[] ,
+  selection: null | object,
+  operations: any[],
+  apply: (op: any) => void,
+  onChange: () => void
 }
