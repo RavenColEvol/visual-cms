@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect } from "react";
 import { Node, Path } from "../core/types";
-import { NODE_TO_INDEX, NODE_TO_KEY, NODE_TO_PARENT } from "./weak-maps";
+import { ELEMENT_TO_NODE, NODE_TO_INDEX, NODE_TO_KEY, NODE_TO_PARENT } from "./weak-maps";
 
 export const findPath = (node: Node): Path => {
   const path: Path = [];
@@ -47,6 +47,12 @@ export const findKey = (node: Node) => {
   return key
 }
 
+export const findNodeFromDOM = (dom: HTMLElement) => {
+  const node = ELEMENT_TO_NODE.get(dom);
+  if(!node) throw Error('node not found')
+  return node;
+}
+
 const CAN_USE_DOM = !!(
   typeof window !== 'undefined' &&
   typeof window.document !== 'undefined' &&
@@ -56,3 +62,8 @@ const CAN_USE_DOM = !!(
 export const useIsomorphicLayoutEffect = CAN_USE_DOM
   ? useLayoutEffect
   : useEffect
+
+
+export const sendToParent = (message:any) => {
+  window.parent.postMessage(message, '*');
+}

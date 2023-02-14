@@ -5,6 +5,7 @@ import { FLUSING } from './weak-maps';
 export const createBuilder = ():Builder => {
   const builder: Builder = {
     children: [],
+    uidata: {},
     selection: null,
     operations: [],
     onChange: () => {},
@@ -85,6 +86,9 @@ export const Transforms = {
   insertNode(builder: Builder, node: NodeType, at: PathType) {
     builder.apply({ type: 'insert_node', path: at, node})
   },
+  setSelection(builder: Builder, path: PathType) {
+    builder.apply({ type: 'set_selection', path })
+  },
   removeNode(builder: Builder, at: PathType) {
     if(at.length === 0) {
       throw new Error("Unable to remove at root");
@@ -130,7 +134,14 @@ function applyToDraft(builder: Builder, selection: any, op:any) {
       }
       const parent = Node.parent(builder, path);
       const index = path.at(-1)!;
-      parent.children.splice(index, 0, node);
+      return parent.children.splice(index, 0, node);
     }
+    case 'set_selection': {
+      const { path } = op;
+      builder.selection = path;
+      return
+    }
+    default:
+      throw new Error('Not an allowed type', op.type)
   }
 }

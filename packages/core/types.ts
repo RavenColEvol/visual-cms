@@ -14,6 +14,7 @@ export type Node = Element | Text
 
 export type Builder = {
   children: Node[] ,
+  uidata: any,
   selection: null | object,
   operations: any[],
   apply: (op: any) => void,

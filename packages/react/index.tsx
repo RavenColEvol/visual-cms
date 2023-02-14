@@ -1,19 +1,21 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import throttle from "lodash-es/throttle";
-import { createBuilder, Element } from "../core";
+import { createBuilder, Element, Transforms } from "../core";
 import { Builder, Node } from "../core/types";
 import { usePostMessage } from "./hooks";
-import { BuilderProvider, StaticBuilderProvider, useBuilder } from "./use-builder";
-import { findKey, useIsomorphicLayoutEffect } from "./utils";
-import { EDITOR_TO_ON_CHANGE, NODE_TO_INDEX, NODE_TO_PARENT } from "./weak-maps";
+import { BuilderProvider, StaticBuilderProvider, useBuilder, useStaticBuilder } from "./use-builder";
+import { findKey, findNodeFromDOM, findPath, sendToParent, useIsomorphicLayoutEffect } from "./utils";
+import { EDITOR_TO_ON_CHANGE, ELEMENT_TO_NODE, NODE_TO_INDEX, NODE_TO_PARENT } from "./weak-maps";
 import styles from './index.module.css';
+import { get } from "lodash-es";
 
 // Package internal code
-export function BuilderComponent({ value }: any) {
+export function BuilderComponent({ suidata }: any) {
   const [builder] = useState(() => {
     const builder = createBuilder();
-    builder.children = value;
+    builder.children = suidata[0];
+    builder.uidata = suidata[1];
     builder.onChange = () => {
       ReactDOM.unstable_batchedUpdates(() => {
         const onContextChange = EDITOR_TO_ON_CHANGE.get(builder);
@@ -55,23 +57,40 @@ export function BuilderComponent({ value }: any) {
 function Renderer(props: any) {
   const dragLineRef = useRef(null);
   const outlineRef = useRef(null);
+  const builder = useBuilder();
 
   useIsomorphicLayoutEffect(() => {
     const onDOMSelectionChange = throttle(() => {
       const domSelection = document.getSelection()!;
+      if(!outlineRef.current || domSelection?.['type'] !== 'Caret') return;
+      const outlineBox = outlineRef.current as HTMLSpanElement;
+      if(domSelection === null) {
+        outlineBox.removeAttribute('style');
+      }
       if(!domSelection || !outlineRef.current) return;
       const isDifferentEl = domSelection.anchorNode !== domSelection.focusNode;
       if(isDifferentEl) return;
       const parentNode = domSelection.anchorNode?.parentNode as globalThis.Element;
       if(!parentNode) return;
-      const outlineNode = parentNode.closest('[data-cs-weeb-node="element"]')
+      const outlineNode = parentNode.closest('[data-cs-weeb-node="element"]') as HTMLElement
       if(!outlineNode) return;
       const box = outlineNode?.getBoundingClientRect() as any;
-      const outlineBox = outlineRef.current as HTMLSpanElement;
+      
       outlineBox.style.top = box['top'] + 'px';
       outlineBox.style.left = box['left'] + 'px';
       outlineBox.style.width = box['width'] + 'px';
       outlineBox.style.height = box['height'] + 'px';
+
+      const node = findNodeFromDOM(outlineNode);
+      const path = findPath(node);
+
+      sendToParent({
+        from: 'cs-weeb--example',
+        type: 'selected',
+        data: { node, path }
+      })
+      
+      Transforms.setSelection(builder, path);
     }, 100);
 
     const onDragOver = (event: DragEvent) => {
@@ -91,21 +110,48 @@ function Renderer(props: any) {
       dragLine.style.width = width + 'px'
     }
 
+    const handleDrop = (event: DragEvent) => {
+      event.preventDefault();
+      if(!dragLineRef.current) return;
+      const dragLine = dragLineRef.current! as HTMLSpanElement;
+      const { clientX, clientY } = event;
+
+      const cursorEl = document.elementFromPoint(clientX, clientY);
+      const domNode = cursorEl?.closest('[data-cs-weeb-node="element"]') as HTMLElement
+      if(!domNode || !dragLine) return;
+      const box = domNode.getBoundingClientRect();
+      const { bottom, top, width, left } = box;
+
+      const topDistance = Math.abs(clientY - top);
+      const bottomDistance = Math.abs(clientY - bottom);
+      const closestTo = topDistance > bottomDistance ? 'bottom': 'top';
+      const node = findNodeFromDOM(domNode);
+      const path = findPath(node) || [];
+      const at = closestTo === 'top' ? 0 : 1;
+      path[path.length - 1] = path[path.length - 1] + at;
+      console.log('called');
+      Transforms.insertNode(builder, {
+        type: 'text',
+        children: [{ text: '{{append}}'}]
+      }, path);
+      dragLine.removeAttribute('style');
+    }
+
     document.addEventListener("selectionchange", onDOMSelectionChange);
     document.addEventListener('dragover', onDragOver);
+    document.addEventListener('drop', handleDrop);
 
     return () => {
       document.removeEventListener("selectionchange", onDOMSelectionChange);
       document.removeEventListener('dragover', onDragOver);
+      document.removeEventListener('drop', handleDrop);
     };
   }, []);
-  
-  const editor = useBuilder();
 
   return (
     <>
       <div data-cs-weeb-editor>{useChildren(props)}</div>
-      <span className="cs-weeb-dragline" style={{ background: 'red', height: '2px', display: 'inline-block', position: 'fixed'}} ref={dragLineRef}></span>
+      <span className={styles["cs-weeb-dragline"]} ref={dragLineRef}></span>
       <span className={styles["cs-weeb-outline"]} ref={outlineRef}></span>
     </>
   );
@@ -145,13 +191,21 @@ function ElementComponent({ element, components }: any) {
   const attributes = {
     "data-cs-weeb-node": "element",
     ref,
+    style: element['style']
   };
+
+  useIsomorphicLayoutEffect(() => {
+    if(!ref.current) return;
+    ELEMENT_TO_NODE.set(ref.current, element)
+  }, [])
+
   return components[element["type"]]({ attributes, children });
 }
 
 function LeafComponent(props: any) {
   const leaf = props["text"];
   const children = leaf["text"];
-
+  const builder = useStaticBuilder()!;
+  if(get(builder['uidata'], children)) return get(builder['uidata'], children)
   return children;
 }

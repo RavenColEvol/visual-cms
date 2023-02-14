@@ -3,5 +3,13 @@
   position: fixed;
   left: -9999px;
   top: -9999px;
-  outline: 2px solid red;
+  outline: 2px solid rgba(255, 0, 0, .4);
+  pointer-events: none;
+}
+
+.cs-weeb-dragline {
+  background: rgba(255, 0, 0, .4);
+  height: 2px;
+  display: inline-block;
+  position: fixed;
 }

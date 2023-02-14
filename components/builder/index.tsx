@@ -1,7 +1,10 @@
 import { DragEvent, useRef } from "react";
-import { getEvent, sendFrameMessage } from "../utils";
+import { getEvent, sendFrameMessage, useFrameEvents } from "../utils";
 
 function Builder({ builderRef }: any) {
+  
+  useFrameEvents(builderRef);
+
   return (
     <div id="builder">
       <Dropzone frameRef={builderRef}/>

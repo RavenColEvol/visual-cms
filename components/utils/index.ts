@@ -1,4 +1,4 @@
-import { RefObject } from "react";
+import { RefObject, useEffect } from "react";
 
 export const sendFrameMessage = (
   iframeRef: RefObject<HTMLIFrameElement>,
@@ -7,6 +7,37 @@ export const sendFrameMessage = (
   if (!iframeRef.current) return;
   iframeRef.current.contentWindow?.postMessage(message, "*");
 };
+
+const frameListeners = new Map();
+
+export const useFrameEvents = (iframeRef: RefObject<HTMLIFrameElement>) => {
+  useEffect(() => {
+    if(!iframeRef.current) return;
+    const handleFrameEvents = (event: MessageEvent) => {
+      const { from, type, data } = event.data || {};
+      if (from !== 'cs-weeb--example') return;
+      
+      const listeners = frameListeners.get(type) || [];
+      listeners.forEach((listener: any) => listener(data))
+    }
+    window.addEventListener('message', handleFrameEvents);
+    return () => {
+      window.removeEventListener('message', handleFrameEvents);
+    }
+  }, [iframeRef])
+}
+
+export const addFrameListener = (eventName: string, callback: any) => {
+  const listeners = frameListeners.get(eventName) || []
+  frameListeners.set(eventName, listeners.concat(callback));
+}
+
+export const removeFrameListener = (eventName: string, callback: any) => {
+  const listeners = frameListeners.get(eventName) || [];
+  const listenerIdx = listeners.indexOf(callback);
+  if(listenerIdx === -1) return;
+  listeners.splice(listenerIdx, 1);
+}
 
 export const getRelativeCoordinates = (
   iframeRef: RefObject<HTMLIFrameElement>,
